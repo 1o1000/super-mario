@@ -17,24 +17,47 @@ static double lerp(double from, double to, double t) {
 class Mario {
  public:
   double x = 20;
-  double y;
+  double y = 500;
+  double acceleration = 20;
+  sf::Vector2f velocity;
 
-  double maxVelocity = 10.0;
-  double acceleration = 0.1;
-  double velocity = 0.0;
-
-  void Move(int input) {
+  void Move(int input, float delta) {
     if (input == 1)
-      velocity += acceleration;
+      velocity.x += acceleration;
     else if (input == -1)
-      velocity -= acceleration;
+      velocity.x -= acceleration;
 
-    velocity = sign(velocity) * std::min(std::abs(velocity), maxVelocity);
-    if (input == 0) velocity = lerp(velocity, 0, 0.005);
+    velocity.x =
+        sign(velocity.x) *
+        std::min(std::abs(static_cast<double>(velocity.x)), max_x_velocity);
+    if (input == 0) velocity.x = lerp(velocity.x, 0, 15 * delta);
 
-    fmt::println("Velocity: {}", velocity);
-    fmt::println("Input: {}", input);
-
-    x += velocity * 0.005f;
+    x += velocity.x * delta;
   }
+
+  void Jump(int input, float delta) {
+    if (y > 500) {
+      velocity.y = 0;
+      y = 500;
+    }
+    if (y < 499.7) velocity.y -= 3000 * delta;
+    if (input == -1 && y >= 500) {
+      is_jumping = true;
+      velocity.y = jump_strength;
+      jump_duration = 0;
+    }
+    if (input == -1 && is_jumping) {
+      velocity.y = jump_strength;
+      jump_duration += delta;
+    }
+    if (jump_duration > .3 || input != -1) is_jumping = false;
+
+    y -= velocity.y * delta;
+  }
+
+ private:
+  double jump_duration = 0;
+  bool is_jumping = false;
+  double jump_strength = 400.0;
+  double max_x_velocity = 200.0;
 };
