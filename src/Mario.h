@@ -1,52 +1,40 @@
 #include <fmt/ranges.h>
 
 #include <SFML/Graphics.hpp>
+#include <cmath>
 #include <iostream>
 
-#include "Direction.h"
+static double sign(double v) {
+  if (v < -0.01) return -1;
+  if (v > 0.01) return 1;
+
+  return 0;
+}
+static double lerp(double from, double to, double t) {
+  return from + ((to - from) * t);
+}
 
 class Mario {
  public:
-  float x;
-  float y;
-  float speed;
-  bool changedDirection;
-  bool moving;
-  Direction direction = Direction::Right;
-  void move();
-  void stop();
-  void changeDirection();
-  void jump();
+  double x = 20;
+  double y;
+
+  double maxVelocity = 10.0;
+  double acceleration = 0.1;
+  double velocity = 0.0;
+
+  void Move(int input) {
+    if (input == 1)
+      velocity += acceleration;
+    else if (input == -1)
+      velocity -= acceleration;
+
+    velocity = sign(velocity) * std::min(std::abs(velocity), maxVelocity);
+    if (input == 0) velocity = lerp(velocity, 0, 0.005);
+
+    fmt::println("Velocity: {}", velocity);
+    fmt::println("Input: {}", input);
+
+    x += velocity * 0.005f;
+  }
 };
-
-void Mario::stop() { this->moving = false; }
-
-void Mario::move() {
-  if (this->changedDirection) {
-    if (this->speed > 0)
-      this->speed -= 0.00003;
-    else if (this->speed <= 0) {
-      this->changedDirection = false;
-      this->speed = 0;
-    }
-  }
-  if (this->speed < 0.05 && this->speed > -0.05) {
-    if (this->direction == Direction::Left && this->moving)
-      this->speed -= 0.00003;
-    if (this->direction == Direction::Right && this->moving)
-      this->speed += 0.00003;
-  }
-  this->x += speed;
-}
-
-void Mario::changeDirection() {
-  this->changedDirection = true;
-  if (this->direction = Direction::Right)
-    this->direction = Direction::Left;
-  else
-    this->direction = Direction::Right;
-}
-
-void Mario::jump() {
-  // TODO: Add Jump
-}
