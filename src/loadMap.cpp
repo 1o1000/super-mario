@@ -4,17 +4,17 @@
 #include <iostream>
 #include <string>
 
-#include "Ground.h"
+#include "Block.h"
 using namespace std;
 
-void addGround(vector<Ground> *grounds, int x, int y);
+void addBlock(vector<Block> *grounds, int x, int y);
 
-vector<Ground> loadMap() {
+vector<Block> loadMap() {
   string line;
   ifstream MyReadFile("maps/map.txt");
-  vector<Ground> grounds = {};
+  vector<Block> grounds = {};
 
-  Ground ground;
+  Block ground;
   int i = 0;
   int l = 0;
   int h = 0;
@@ -23,7 +23,7 @@ vector<Ground> loadMap() {
     l++;
     while (i < line.length()) {
       char a = line[i];
-      if (a == '#') addGround(&grounds, i, l - 1);
+      if (a == '#') addBlock(&grounds, i, l - 1);
       i++;
     }
     i = 0;
@@ -34,8 +34,8 @@ vector<Ground> loadMap() {
   return grounds;
 }
 
-void addGround(vector<Ground> *grounds, int x, int y) {
-  Ground ground;
+void addBlock(vector<Block> *grounds, int x, int y) {
+  Block ground;
   ground.x = x;
   ground.y = y;
   grounds[0].push_back(ground);

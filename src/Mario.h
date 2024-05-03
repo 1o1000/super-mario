@@ -23,8 +23,8 @@ Point getTileLocation(double x, double y) {
   return point;
 }
 
-bool hasBlock(Point point, std::vector<Ground> grounds) {
-  for (Ground ground : grounds) {
+bool hasBlock(Point point, std::vector<Block> grounds) {
+  for (Block ground : grounds) {
     Point tile = getTileLocation(ground.x, ground.y);
     if (tile.x == point.x && tile.y == point.y) return true;
   }
@@ -39,9 +39,10 @@ class Mario {
   double acceleration = 200;
   sf::Vector2f velocity;
 
-  void Move(int input, float delta, std::vector<Ground> grounds) {
+  void Move(int input, float delta, const std::vector<Block>& grounds) {
     if (input == 1 && velocity.x > -0.5)
       velocity.x += acceleration * delta;
+
     else if (input == -1 && velocity.x < 0.5)
       velocity.x -= acceleration * delta;
     else
@@ -63,7 +64,7 @@ class Mario {
     }
   }
 
-  void Jump(int input, float delta, std::vector<Ground> grounds) {
+  void Jump(int input, float delta, const std::vector<Block>& grounds) {
     // if (y > 432) {
     //   velocity.y = 0;
     //   y = 432;
