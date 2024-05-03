@@ -10,38 +10,66 @@ static double sign(double v) {
 
   return 0;
 }
-static double lerp(double from, double to, double t) {
-  return from + ((to - from) * t);
+
+struct Point {
+  int x;
+  int y;
+};
+
+Point getTileLocation(double x, double y) {
+  Point point;
+  point.x = (int)(x / 48);
+  point.y = (int)(y / 48);
+  return point;
+}
+
+bool hasBlock(Point point, std::vector<Ground> grounds) {
+  for (Ground ground : grounds) {
+    Point tile = getTileLocation(ground.x, ground.y);
+    if (tile.x == point.x && tile.y == point.y) return true;
+  }
+  return false;
 }
 
 class Mario {
  public:
+  bool isOnGround = true;
   double x = 20;
-  double y = 500;
-  double acceleration = 20;
+  double y = 432;
+  double acceleration = 200;
   sf::Vector2f velocity;
 
-  void Move(int input, float delta) {
-    if (input == 1)
-      velocity.x += acceleration;
-    else if (input == -1)
-      velocity.x -= acceleration;
+  void Move(int input, float delta, std::vector<Ground> grounds) {
+    if (input == 1 && velocity.x > -0.5)
+      velocity.x += acceleration * delta;
+    else if (input == -1 && velocity.x < 0.5)
+      velocity.x -= acceleration * delta;
+    else
+      velocity.x *= 0.95;
 
     velocity.x =
         sign(velocity.x) *
         std::min(std::abs(static_cast<double>(velocity.x)), max_x_velocity);
-    if (input == 0) velocity.x = lerp(velocity.x, 0, 15 * delta);
 
     x += velocity.x * delta;
+
+    if (hasBlock(getTileLocation(x + 24, y - 24), grounds)) {
+      velocity.x = 0;
+      x -= fmod(x, 48) - 24;
+    }
+    if (hasBlock(getTileLocation(x - 24, y - 24), grounds)) {
+      velocity.x = 0;
+      x += fmod(x, 48) - 23;
+    }
   }
 
-  void Jump(int input, float delta) {
-    if (y > 500) {
-      velocity.y = 0;
-      y = 500;
-    }
-    if (y < 499.7) velocity.y -= 3000 * delta;
-    if (input == -1 && y >= 500) {
+  void Jump(int input, float delta, std::vector<Ground> grounds) {
+    // if (y > 432) {
+    //   velocity.y = 0;
+    //   y = 432;
+    // }
+    velocity.y -= 3000 * delta;
+    if (input == -1) {
       is_jumping = true;
       velocity.y = jump_strength;
       jump_duration = 0;
@@ -52,7 +80,31 @@ class Mario {
     }
     if (jump_duration > .3 || input != -1) is_jumping = false;
 
+    isOnGround = false;
+    if (hasBlock(getTileLocation(x, y - 49), grounds)) {
+      is_jumping = false;
+      velocity.y = 0;
+      velocity.y -= 3000 * delta;
+    }
     y -= velocity.y * delta;
+    if (hasBlock(getTileLocation(x, y + 1), grounds)) {
+      isOnGround = true;
+      velocity.y = 0;
+      y -= fmod(y, 48);
+    }
+
+    if (fmod(x, 48) > 24)
+      if (hasBlock(getTileLocation(x + 48, y + 1), grounds)) {
+        isOnGround = true;
+        velocity.y = 0;
+        y -= fmod(y, 48);
+      }
+    if (fmod(x, 48) < 24)
+      if (hasBlock(getTileLocation(x - 48, y + 1), grounds)) {
+        isOnGround = true;
+        velocity.y = 0;
+        y -= fmod(y, 48);
+      }
   }
 
  private:

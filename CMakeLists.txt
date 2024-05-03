@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(SFML)
+project(Mario)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -20,7 +20,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(fmt)
 
 
-add_executable(SFML src/main.cpp)
+add_executable(Mario src/main.cpp src/loadMap.cpp)
 
-target_link_libraries(SFML sfml-graphics)
-target_link_libraries(SFML fmt)
+target_link_libraries(Mario sfml-graphics)
+target_link_libraries(Mario fmt)
