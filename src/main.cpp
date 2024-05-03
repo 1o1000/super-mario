@@ -16,10 +16,10 @@ int main() {
 
   sf::Clock deltaClock;
   sf::Time dt;
-
   sf::View camera;
   camera.setCenter(window.getSize().x / 2, window.getSize().y / 2);
 
+  int leftPos = 0;
   const int tile_size = 48;
 
   std::vector<Block> grounds = loadMap();
@@ -83,19 +83,19 @@ int main() {
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) mario_x_input += 1;
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) mario_y_input -= 1;
 
-    mario.Move(mario_x_input, dt.asSeconds(), grounds);
+    mario.Move(mario_x_input, dt.asSeconds(), grounds, leftPos);
     mario.Jump(mario_y_input, dt.asSeconds(), grounds);
+
+    camera.setSize(window.getSize().x, window.getSize().y);
+    if (camera.getCenter().x < mario.x)
+      camera.setCenter(mario.x, window.getSize().y / 2);
+    leftPos = camera.getCenter().x - (window.getSize().x / 2);
+    window.setView(camera);
 
     if (mario.velocity.x > 0)
       sprite.setScale(3.f, 3.f);
     else if (mario.velocity.x < 0)
       sprite.setScale(-3.f, 3.f);
-
-    camera.setSize(window.getSize().x, window.getSize().y);
-    if (camera.getCenter().x < mario.x)
-      camera.setCenter(mario.x, window.getSize().y / 2);
-
-    window.setView(camera);
 
     sprite.setPosition(mario.x, mario.y);
 
@@ -113,9 +113,8 @@ int main() {
           sprite.setTexture(marioWalk[currentIndex]);
           currentIndex++;
           duration = 0;
-        } else {
+        } else
           currentIndex = 0;
-        }
       }
     } else
       sprite.setTexture(texture);

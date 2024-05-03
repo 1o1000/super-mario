@@ -39,10 +39,10 @@ class Mario {
   double acceleration = 200;
   sf::Vector2f velocity;
 
-  void Move(int input, float delta, const std::vector<Block>& grounds) {
+  void Move(int input, float delta, const std::vector<Block>& grounds,
+            int leftPos) {
     if (input == 1 && velocity.x > -0.5)
       velocity.x += acceleration * delta;
-
     else if (input == -1 && velocity.x < 0.5)
       velocity.x -= acceleration * delta;
     else
@@ -52,7 +52,11 @@ class Mario {
         sign(velocity.x) *
         std::min(std::abs(static_cast<double>(velocity.x)), max_x_velocity);
 
-    x += velocity.x * delta;
+    if (x - 23 > leftPos) {
+      x += velocity.x * delta;
+    } else {
+      x += 1;
+    }
 
     if (hasBlock(getTileLocation(x + 24, y - 24), grounds)) {
       velocity.x = 0;
