@@ -26,7 +26,8 @@ int main() {
 
   Mario mario;
   sf::Sprite sprite;
-  sf::Sprite brick;
+  sf::Sprite brick, block, question;
+  sf::Sprite pipe, pipeHead;
 
   std::vector<sf::Texture> marioWalk = {};
   sf::Texture walk1, walk2, walk3;
@@ -38,11 +39,31 @@ int main() {
   marioWalk.push_back(walk2);
   marioWalk.push_back(walk3);
 
+  std::vector<sf::Texture> questionTex = {};
+  sf::Texture question1, question2, question3;
+  if (!question1.loadFromFile("textures/Question1.png") ||
+      !question2.loadFromFile("textures/Question2.png") ||
+      !question3.loadFromFile("textures/Question3.png"))
+    fmt::println("error occured while loading textures");
+
+  questionTex.push_back(question1);
+  questionTex.push_back(question2);
+  questionTex.push_back(question3);
+  question.setTexture(question1);
+
+  sf::Texture pipeHeadTexture, pipeTexture;
+  if (!pipeHeadTexture.loadFromFile("textures/PipeHead.png") ||
+      !pipeTexture.loadFromFile("textures/Pipe.png"))
+    fmt::println("error occured while loading textures");
+  pipe.setTexture(pipeTexture);
+  pipeHead.setTexture(pipeHeadTexture);
+
   sf::Texture texture, brakeTexture, jumpTexture;
-  sf::Texture brickTexture;
+  sf::Texture brickTexture, blockTexture;
   if (!texture.loadFromFile("textures/MarioIdle.png") ||
       !brakeTexture.loadFromFile("textures/MarioBrake.png") ||
       !jumpTexture.loadFromFile("textures/MarioJump.png") ||
+      !blockTexture.loadFromFile("textures/Block.png") ||
       !brickTexture.loadFromFile("textures/Brick.png"))
     fmt::println("error occured while loading textures");
 
@@ -51,20 +72,22 @@ int main() {
   sprite.setOrigin(texture.getSize().x / 2, texture.getSize().x);
 
   brick.setTexture(brickTexture);
-
-  bool d_down = false;
-  bool a_down = false;
-
-  double ground_level = 0;
+  block.setTexture(blockTexture);
 
   brick.setScale(3.f, 3.f);
+  block.setScale(3.f, 3.f);
+  pipe.setScale(3.f, 3.f);
+  pipeHead.setScale(3.f, 3.f);
+  question.setScale(3.f, 3.f);
   for (Block &ground : grounds) {
     ground.x = ground.x * tile_size;
     ground.y = ground.y * tile_size;
   }
 
   double duration = 0;
+  double qDuration = 0;
   int currentIndex = 0;
+  int cIndex = 0;
 
   while (window.isOpen()) {
     sf::Event event = sf::Event();
@@ -82,6 +105,7 @@ int main() {
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) mario_x_input -= 1;
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) mario_x_input += 1;
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) mario_y_input -= 1;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q)) window.close();
 
     mario.Move(mario_x_input, dt.asSeconds(), grounds, leftPos);
     mario.Jump(mario_y_input, dt.asSeconds(), grounds);
@@ -121,9 +145,27 @@ int main() {
 
     window.clear(sf::Color(135, 206, 235));
 
+    qDuration += dt.asSeconds();
+    if (qDuration >= 0.4) {
+      if (cIndex < 3) {
+        question.setTexture(questionTex[cIndex]);
+        cIndex++;
+        qDuration = 0;
+      } else
+        cIndex = 0;
+    }
+
     for (Block ground : grounds) {
-      brick.setPosition(ground.x, ground.y);
+      if (ground.id == "ground") brick.setPosition(ground.x, ground.y);
+      if (ground.id == "block") block.setPosition(ground.x, ground.y);
+      if (ground.id == "question") question.setPosition(ground.x, ground.y);
+      if (ground.id == "pipe") pipe.setPosition(ground.x, ground.y);
+      if (ground.id == "pipeHead") pipeHead.setPosition(ground.x, ground.y);
       window.draw(brick);
+      window.draw(block);
+      window.draw(question);
+      window.draw(pipe);
+      window.draw(pipeHead);
     }
 
     window.draw(sprite);

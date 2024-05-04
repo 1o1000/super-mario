@@ -7,7 +7,7 @@
 #include "Block.h"
 using namespace std;
 
-void addBlock(vector<Block> *grounds, int x, int y);
+void addBlock(vector<Block> *grounds, string id, int x, int y);
 
 vector<Block> loadMap() {
   string line;
@@ -23,7 +23,11 @@ vector<Block> loadMap() {
     l++;
     while (i < line.length()) {
       char a = line[i];
-      if (a == '#') addBlock(&grounds, i, l - 1);
+      if (a == '#') addBlock(&grounds, "ground", i, l - 1);
+      if (a == '%') addBlock(&grounds, "block", i, l - 1);
+      if (a == '+') addBlock(&grounds, "question", i, l - 1);
+      if (a == '^') addBlock(&grounds, "pipeHead", i, l - 1);
+      if (a == '*') addBlock(&grounds, "pipe", i, l - 1);
       i++;
     }
     i = 0;
@@ -34,8 +38,9 @@ vector<Block> loadMap() {
   return grounds;
 }
 
-void addBlock(vector<Block> *grounds, int x, int y) {
+void addBlock(vector<Block> *grounds, string id, int x, int y) {
   Block ground;
+  ground.id = id;
   ground.x = x;
   ground.y = y;
   grounds[0].push_back(ground);
