@@ -107,8 +107,8 @@ int main() {
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) mario_y_input -= 1;
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q)) window.close();
 
-    mario.Move(mario_x_input, dt.asSeconds(), grounds, leftPos);
-    mario.Jump(mario_y_input, dt.asSeconds(), grounds);
+    mario.HorizontalMove(mario_x_input, dt.asSeconds(), grounds, leftPos);
+    mario.VerticalMove(mario_y_input, dt.asSeconds(), grounds);
 
     camera.setSize(window.getSize().x, window.getSize().y);
     if (camera.getCenter().x < mario.x)
@@ -159,13 +159,13 @@ int main() {
       if (ground.id == "ground") brick.setPosition(ground.x, ground.y);
       if (ground.id == "block") block.setPosition(ground.x, ground.y);
       if (ground.id == "question") question.setPosition(ground.x, ground.y);
-      if (ground.id == "pipe") pipe.setPosition(ground.x, ground.y);
-      if (ground.id == "pipeHead") pipeHead.setPosition(ground.x, ground.y);
+      // if (ground.id == "pipe") pipe.setPosition(ground.x, ground.y);
+      // if (ground.id == "pipeHead") pipeHead.setPosition(ground.x, ground.y);
       window.draw(brick);
       window.draw(block);
       window.draw(question);
-      window.draw(pipe);
-      window.draw(pipeHead);
+      // window.draw(pipe);
+      // window.draw(pipeHead);
     }
 
     window.draw(sprite);
