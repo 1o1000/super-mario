@@ -26,8 +26,8 @@ vector<Block> loadMap() {
       if (a == '#') addBlock(&grounds, "ground", i, l - 1);
       if (a == '%') addBlock(&grounds, "block", i, l - 1);
       if (a == '+') addBlock(&grounds, "question", i, l - 1);
-      if (a == '^') addBlock(&grounds, "pipeHead", i, l - 1);
-      if (a == '*') addBlock(&grounds, "pipe", i, l - 1);
+      // if (a == '^') addBlock(&grounds, "pipeHead", i, l - 1);
+      // if (a == '*') addBlock(&grounds, "pipe", i, l - 1);
       i++;
     }
     i = 0;

@@ -5,10 +5,11 @@
 #include <iostream>
 
 #include "Block.h"
-#include "Mario.h"
+#include "Goomba.h"
 
 std::vector<Block> loadMap();
 
+// TODO: Get Animated Texture From Single Image
 int main() {
   auto window = sf::RenderWindow(sf::VideoMode({780, 480}), "Super Mario");
 
@@ -25,9 +26,21 @@ int main() {
   std::vector<Block> grounds = loadMap();
 
   Mario mario;
-  sf::Sprite sprite;
+  Goomba goomba;
+
+  sf::Sprite marioSprite;
+  sf::Sprite goombaSprite;
   sf::Sprite brick, block, question;
   sf::Sprite pipe, pipeHead;
+
+  std::vector<sf::Texture> goombaTex = {};
+  sf::Texture goombaWalk1, goombaWalk2;
+  if (!goombaWalk1.loadFromFile("textures/GoombaWalk1.png") ||
+      !goombaWalk2.loadFromFile("textures/GoombaWalk2.png"))
+    fmt::println("error occured while loading textures");
+
+  goombaTex.push_back(goombaWalk1);
+  goombaTex.push_back(goombaWalk2);
 
   std::vector<sf::Texture> marioWalk = {};
   sf::Texture walk1, walk2, walk3;
@@ -46,10 +59,10 @@ int main() {
       !question3.loadFromFile("textures/Question3.png"))
     fmt::println("error occured while loading textures");
 
+  question.setTexture(question1);
   questionTex.push_back(question1);
   questionTex.push_back(question2);
   questionTex.push_back(question3);
-  question.setTexture(question1);
 
   sf::Texture pipeHeadTexture, pipeTexture;
   if (!pipeHeadTexture.loadFromFile("textures/PipeHead.png") ||
@@ -67,9 +80,11 @@ int main() {
       !brickTexture.loadFromFile("textures/Brick.png"))
     fmt::println("error occured while loading textures");
 
-  sprite.setTexture(texture);
-  sprite.setScale(3.f, 3.f);
-  sprite.setOrigin(texture.getSize().x / 2, texture.getSize().x);
+  marioSprite.setTexture(texture);
+  marioSprite.setScale(3.f, 3.f);
+  marioSprite.setOrigin(texture.getSize().x / 2, texture.getSize().x);
+
+  goombaSprite.setTexture(goombaWalk1);
 
   brick.setTexture(brickTexture);
   block.setTexture(blockTexture);
@@ -86,8 +101,13 @@ int main() {
 
   double duration = 0;
   double qDuration = 0;
-  int currentIndex = 0;
-  int cIndex = 0;
+  double gDuration = 0;
+
+  int mIndex = 0;
+  int qIndex = 0;
+  int gIndex = 0;
+
+  goombaSprite.setScale(2.f, 2.f);
 
   while (window.isOpen()) {
     sf::Event event = sf::Event();
@@ -106,9 +126,12 @@ int main() {
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) mario_x_input += 1;
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) mario_y_input -= 1;
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q)) window.close();
+    // if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) window.close();
 
     mario.HorizontalMove(mario_x_input, dt.asSeconds(), grounds, leftPos);
     mario.VerticalMove(mario_y_input, dt.asSeconds(), grounds);
+
+    goomba.Move(dt.asSeconds(), grounds);
 
     camera.setSize(window.getSize().x, window.getSize().y);
     if (camera.getCenter().x < mario.x)
@@ -117,58 +140,66 @@ int main() {
     window.setView(camera);
 
     if (mario.velocity.x > 0)
-      sprite.setScale(3.f, 3.f);
+      marioSprite.setScale(3.f, 3.f);
     else if (mario.velocity.x < 0)
-      sprite.setScale(-3.f, 3.f);
+      marioSprite.setScale(-3.f, 3.f);
 
-    sprite.setPosition(mario.x, mario.y);
+    marioSprite.setPosition(mario.x, mario.y);
+    goombaSprite.setPosition(goomba.x, goomba.y);
 
     if (!mario.isOnGround)
-      sprite.setTexture(jumpTexture);
+      marioSprite.setTexture(jumpTexture);
     else if (mario_x_input == 1 && mario.velocity.x < 0)
-      sprite.setTexture(brakeTexture);
+      marioSprite.setTexture(brakeTexture);
     else if (mario_x_input == -1 && mario.velocity.x > 0)
-      sprite.setTexture(brakeTexture);
+      marioSprite.setTexture(brakeTexture);
     else if ((mario_x_input == 1 && mario.velocity.x > 0) ||
              mario_x_input == -1 && mario.velocity.x < 0) {
       duration += dt.asSeconds();
       if (duration >= 0.4) {
-        if (currentIndex < 3) {
-          sprite.setTexture(marioWalk[currentIndex]);
-          currentIndex++;
+        if (mIndex < 3) {
+          marioSprite.setTexture(marioWalk[mIndex]);
+          mIndex++;
           duration = 0;
         } else
-          currentIndex = 0;
+          mIndex = 0;
       }
     } else
-      sprite.setTexture(texture);
+      marioSprite.setTexture(texture);
 
     window.clear(sf::Color(135, 206, 235));
 
     qDuration += dt.asSeconds();
     if (qDuration >= 0.4) {
-      if (cIndex < 3) {
-        question.setTexture(questionTex[cIndex]);
-        cIndex++;
+      if (qIndex < 3) {
+        question.setTexture(questionTex[qIndex]);
+        qIndex++;
         qDuration = 0;
       } else
-        cIndex = 0;
+        qIndex = 0;
+    }
+
+    gDuration += dt.asSeconds();
+    if (gDuration >= 0.4) {
+      if (gIndex <= 1) {
+        goombaSprite.setTexture(goombaTex[gIndex]);
+        gIndex++;
+        gDuration = 0;
+      } else
+        gIndex = 0;
     }
 
     for (Block ground : grounds) {
       if (ground.id == "ground") brick.setPosition(ground.x, ground.y);
       if (ground.id == "block") block.setPosition(ground.x, ground.y);
       if (ground.id == "question") question.setPosition(ground.x, ground.y);
-      // if (ground.id == "pipe") pipe.setPosition(ground.x, ground.y);
-      // if (ground.id == "pipeHead") pipeHead.setPosition(ground.x, ground.y);
       window.draw(brick);
       window.draw(block);
       window.draw(question);
-      // window.draw(pipe);
-      // window.draw(pipeHead);
     }
 
-    window.draw(sprite);
+    window.draw(marioSprite);
+    window.draw(goombaSprite);
 
     window.display();
   }
