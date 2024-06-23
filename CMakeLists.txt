@@ -20,7 +20,10 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(fmt)
 
 
-add_executable(Mario src/main.cpp src/loadMap.cpp)
+add_executable(Mario src/main.cpp src/Map.cpp src/Mario.cpp src/Map.cpp src/Game.cpp src/Coin.cpp src/Goomba.cpp src/Block.cpp src/Mushroom.cpp)
+
+target_include_directories(Mario PRIVATE "${CMAKE_SOURCE_DIR/headers}")
 
 target_link_libraries(Mario sfml-graphics)
+target_link_libraries(Mario sfml-audio)
 target_link_libraries(Mario fmt)

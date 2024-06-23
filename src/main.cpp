@@ -1,205 +1,223 @@
 #include <fmt/ranges.h>
 #include <time.h>
 
+#include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
 #include <iostream>
 
-#include "Block.h"
-#include "Goomba.h"
+#include "headers/Block.h"
+#include "headers/Game.h"
+#include "headers/Goomba.h"
+#include "headers/Map.h"
+#include "headers/Mario.h"
 
-std::vector<Block> loadMap();
+Game game;
+Mario mario;
 
-// TODO: Get Animated Texture From Single Image
 int main() {
-  auto window = sf::RenderWindow(sf::VideoMode({780, 480}), "Super Mario");
+  auto window =
+      sf::RenderWindow(sf::VideoMode({game.currentLevel.tile_size * 22,
+                                      game.currentLevel.tile_size * 15}),
+                       "Super Mario");
+  window.setPosition(sf::Vector2i(0, 0));
 
   window.setVerticalSyncEnabled(true);
 
-  sf::Clock deltaClock;
-  sf::Time dt;
+  game.Load("maps/map.txt");
+
+  game.currentLevel.SetTextures();
+
   sf::View camera;
+  int leftPos = 0;
   camera.setCenter(window.getSize().x / 2, window.getSize().y / 2);
 
-  int leftPos = 0;
-  const int tile_size = 48;
+  sf::Clock deltaClock;
+  sf::Time dt;
 
-  std::vector<Block> grounds = loadMap();
+  sf::Font font, font2;
+  font.loadFromFile("fonts/notosans.ttf");
+  font2.loadFromFile("fonts/font.ttf");
 
-  Mario mario;
-  Goomba goomba;
+  sf::Text timeText{"TIME", font, 24};
+  sf::Text time{"00:00", font, 24};
 
-  sf::Sprite marioSprite;
-  sf::Sprite goombaSprite;
-  sf::Sprite brick, block, question;
-  sf::Sprite pipe, pipeHead;
+  sf::Text livesText{"LIVES", font, 24};
+  sf::Text lives{std::to_string(mario.lives), font, 24};
 
-  std::vector<sf::Texture> goombaTex = {};
-  sf::Texture goombaWalk1, goombaWalk2;
-  if (!goombaWalk1.loadFromFile("textures/GoombaWalk1.png") ||
-      !goombaWalk2.loadFromFile("textures/GoombaWalk2.png"))
-    fmt::println("error occured while loading textures");
+  sf::Text pointsText{"POINTS", font, 24};
+  sf::Text points{std::to_string(game.points), font, 24};
 
-  goombaTex.push_back(goombaWalk1);
-  goombaTex.push_back(goombaWalk2);
+  sf::Text coinsText{"COINS", font, 24};
+  sf::Text coins{std::to_string(game.coins), font, 24};
 
-  std::vector<sf::Texture> marioWalk = {};
-  sf::Texture walk1, walk2, walk3;
-  if (!walk1.loadFromFile("textures/MarioWalk1.png") ||
-      !walk2.loadFromFile("textures/MarioWalk2.png") ||
-      !walk3.loadFromFile("textures/MarioWalk3.png"))
-    fmt::println("error occured while loading textures");
-  marioWalk.push_back(walk1);
-  marioWalk.push_back(walk2);
-  marioWalk.push_back(walk3);
+  sf::Text gameOverText{"GAME OVER", font2, 120};
+  sf::Text stagePassedText{"STAGE PASSED", font2, 120};
 
-  std::vector<sf::Texture> questionTex = {};
-  sf::Texture question1, question2, question3;
-  if (!question1.loadFromFile("textures/Question1.png") ||
-      !question2.loadFromFile("textures/Question2.png") ||
-      !question3.loadFromFile("textures/Question3.png"))
-    fmt::println("error occured while loading textures");
+  time.setFillColor(sf::Color::Black);
+  timeText.setFillColor(sf::Color::Black);
+  lives.setFillColor(sf::Color::Black);
+  livesText.setFillColor(sf::Color::Black);
+  stagePassedText.setFillColor(sf::Color::Black);
+  pointsText.setFillColor(sf::Color::Black);
+  points.setFillColor(sf::Color::Black);
+  coinsText.setFillColor(sf::Color::Black);
+  coins.setFillColor(sf::Color::Black);
 
-  question.setTexture(question1);
-  questionTex.push_back(question1);
-  questionTex.push_back(question2);
-  questionTex.push_back(question3);
-
-  sf::Texture pipeHeadTexture, pipeTexture;
-  if (!pipeHeadTexture.loadFromFile("textures/PipeHead.png") ||
-      !pipeTexture.loadFromFile("textures/Pipe.png"))
-    fmt::println("error occured while loading textures");
-  pipe.setTexture(pipeTexture);
-  pipeHead.setTexture(pipeHeadTexture);
-
-  sf::Texture texture, brakeTexture, jumpTexture;
-  sf::Texture brickTexture, blockTexture;
-  if (!texture.loadFromFile("textures/MarioIdle.png") ||
-      !brakeTexture.loadFromFile("textures/MarioBrake.png") ||
-      !jumpTexture.loadFromFile("textures/MarioJump.png") ||
-      !blockTexture.loadFromFile("textures/Block.png") ||
-      !brickTexture.loadFromFile("textures/Brick.png"))
-    fmt::println("error occured while loading textures");
-
-  marioSprite.setTexture(texture);
-  marioSprite.setScale(3.f, 3.f);
-  marioSprite.setOrigin(texture.getSize().x / 2, texture.getSize().x);
-
-  goombaSprite.setTexture(goombaWalk1);
-
-  brick.setTexture(brickTexture);
-  block.setTexture(blockTexture);
-
-  brick.setScale(3.f, 3.f);
-  block.setScale(3.f, 3.f);
-  pipe.setScale(3.f, 3.f);
-  pipeHead.setScale(3.f, 3.f);
-  question.setScale(3.f, 3.f);
-  for (Block &ground : grounds) {
-    ground.x = ground.x * tile_size;
-    ground.y = ground.y * tile_size;
-  }
-
-  double duration = 0;
-  double qDuration = 0;
-  double gDuration = 0;
-
-  int mIndex = 0;
-  int qIndex = 0;
-  int gIndex = 0;
-
-  goombaSprite.setScale(2.f, 2.f);
-
+  mario.x = game.currentLevel.startX;
+  mario.y = game.currentLevel.startY;
   while (window.isOpen()) {
     sf::Event event = sf::Event();
-
-    while (window.pollEvent(event))
+    while (window.pollEvent(event)) {
       if (event.type == sf::Event::Closed) window.close();
+      if (event.type == sf::Event::KeyPressed) game.Start();
+    }
 
-    int mario_x_input = 0;
-    int mario_y_input = 0;
+    int x_input = 0;
+    int y_input = 0;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) y_input -= 1;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) x_input -= 1;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) x_input += 1;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q)) window.close();
 
     dt = deltaClock.getElapsedTime();
     deltaClock.restart();
-    duration += dt.asSeconds();
 
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) mario_x_input -= 1;
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) mario_x_input += 1;
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) mario_y_input -= 1;
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q)) window.close();
-    // if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) window.close();
+    if (mario.lives == 0 && mario.y > 620) {
+      game.End();
+      window.clear(sf::Color::Black);
+      gameOverText.setPosition(
+          camera.getCenter().x - gameOverText.getGlobalBounds().getSize().x / 2,
+          camera.getCenter().y -
+              gameOverText.getGlobalBounds().getSize().y / 2);
+      window.draw(gameOverText);
 
-    mario.HorizontalMove(mario_x_input, dt.asSeconds(), grounds, leftPos);
-    mario.VerticalMove(mario_y_input, dt.asSeconds(), grounds);
+      window.display();
+      continue;
+    } else if (mario.isDead && mario.y > 1000 && mario.lives > 0 &&
+               mario.die.getStatus() == mario.die.Stopped) {
+      mario.x = game.currentLevel.startX;
+      mario.y = game.currentLevel.startY;
+      game.StartTheme();
+      mario.isDead = false;
 
-    goomba.Move(dt.asSeconds(), grounds);
+      camera.setCenter(window.getSize().x / 2, window.getSize().y / 2);
+    }
+
+    time.setString(std::to_string(game.time));
+    points.setString(std::to_string(game.points));
+    coins.setString(std::to_string(game.coins));
+
+    if (mario.isDead || mario.stage_passed) game.StopTheme();
+    if (game.started) game.HandleFrame();
+    if (mario.stage_passed &&
+        mario.distance_travelled >= game.currentLevel.tile_size * 5.5) {
+      game.End();
+      if (mario.stageClear.getStatus() == mario.stageClear.Stopped) {
+        game.Load("maps/map2.txt");
+
+        game.currentMusic = 1;
+        game.StartTheme();
+
+        game.currentLevel.SetTextures();
+
+        camera.setCenter(window.getSize().x / 2, window.getSize().y / 2);
+
+        mario.distance_travelled = 0;
+        mario.lives = 3;
+        mario.slide_finished = false;
+        mario.stage_passed = false;
+      }
+      stagePassedText.setPosition(
+          camera.getCenter().x -
+              stagePassedText.getGlobalBounds().getSize().x / 2,
+          camera.getCenter().y - stagePassedText.getGlobalBounds().getSize().y);
+      mario.Move(x_input, y_input, dt.asSeconds(), leftPos);
+      window.draw(mario.sprite);
+      window.draw(stagePassedText);
+
+      window.display();
+      continue;
+    }
+
+    mario.Move(x_input, y_input, dt.asSeconds(), leftPos);
 
     camera.setSize(window.getSize().x, window.getSize().y);
-    if (camera.getCenter().x < mario.x)
+    if (camera.getCenter().x < mario.x &&
+        (camera.getCenter().x + window.getSize().x / 2) <=
+            (game.currentLevel.tile_size * 157))
       camera.setCenter(mario.x, window.getSize().y / 2);
+
     leftPos = camera.getCenter().x - (window.getSize().x / 2);
+    timeText.setPosition(camera.getCenter().x - (window.getSize().x / 2), 0);
+    time.setPosition(((camera.getCenter().x - (window.getSize().x / 2)) +
+                      timeText.getGlobalBounds().getSize().x / 2) -
+                         time.getGlobalBounds().getSize().x / 2,
+                     timeText.getGlobalBounds().getSize().y + 10);
+
+    livesText.setPosition(camera.getCenter().x + 100 - (window.getSize().x / 2),
+                          0);
+
+    lives.setPosition((camera.getCenter().x + 100 - (window.getSize().x / 2)) +
+                          livesText.getGlobalBounds().getSize().x / 2,
+                      livesText.getGlobalBounds().getSize().y + 10);
+
+    pointsText.setPosition(
+        camera.getCenter().x + 200 - (window.getSize().x / 2), 0);
+    points.setPosition(
+        ((camera.getCenter().x + 200 - (window.getSize().x / 2)) +
+         pointsText.getGlobalBounds().getSize().x / 2) -
+            points.getGlobalBounds().getSize().x / 2,
+        pointsText.getGlobalBounds().getSize().y + 10);
+
+    coinsText.setPosition(camera.getCenter().x + 320 - (window.getSize().x / 2),
+                          0);
+    coins.setPosition(((camera.getCenter().x + 320 - (window.getSize().x / 2)) +
+                       coinsText.getGlobalBounds().getSize().x / 2) -
+                          coins.getGlobalBounds().getSize().x / 2,
+                      coinsText.getGlobalBounds().getSize().y + 10);
+
+    lives.setString(std::to_string(mario.lives));
+
     window.setView(camera);
-
-    if (mario.velocity.x > 0)
-      marioSprite.setScale(3.f, 3.f);
-    else if (mario.velocity.x < 0)
-      marioSprite.setScale(-3.f, 3.f);
-
-    marioSprite.setPosition(mario.x, mario.y);
-    goombaSprite.setPosition(goomba.x, goomba.y);
-
-    if (!mario.isOnGround)
-      marioSprite.setTexture(jumpTexture);
-    else if (mario_x_input == 1 && mario.velocity.x < 0)
-      marioSprite.setTexture(brakeTexture);
-    else if (mario_x_input == -1 && mario.velocity.x > 0)
-      marioSprite.setTexture(brakeTexture);
-    else if ((mario_x_input == 1 && mario.velocity.x > 0) ||
-             mario_x_input == -1 && mario.velocity.x < 0) {
-      duration += dt.asSeconds();
-      if (duration >= 0.4) {
-        if (mIndex < 3) {
-          marioSprite.setTexture(marioWalk[mIndex]);
-          mIndex++;
-          duration = 0;
-        } else
-          mIndex = 0;
-      }
-    } else
-      marioSprite.setTexture(texture);
 
     window.clear(sf::Color(135, 206, 235));
 
-    qDuration += dt.asSeconds();
-    if (qDuration >= 0.4) {
-      if (qIndex < 3) {
-        question.setTexture(questionTex[qIndex]);
-        qIndex++;
-        qDuration = 0;
-      } else
-        qIndex = 0;
-    }
+    if (mario.stage_passed) game.End();
 
-    gDuration += dt.asSeconds();
-    if (gDuration >= 0.4) {
-      if (gIndex <= 1) {
-        goombaSprite.setTexture(goombaTex[gIndex]);
-        gIndex++;
-        gDuration = 0;
-      } else
-        gIndex = 0;
+    for (Block& block : game.currentLevel.blocks) {
+      block.Interact(dt.asSeconds());
+      window.draw(block.sprite);
+    };
+    for (int i = 0; i < game.currentLevel.goombas.size();) {
+      if (game.currentLevel.goombas[i].will_delete)
+        game.currentLevel.goombas.erase(game.currentLevel.goombas.begin() + i);
+      else
+        i++;
     }
+    for (Goomba& goomba : game.currentLevel.goombas) {
+      goomba.Move(dt.asSeconds());
 
-    for (Block ground : grounds) {
-      if (ground.id == "ground") brick.setPosition(ground.x, ground.y);
-      if (ground.id == "block") block.setPosition(ground.x, ground.y);
-      if (ground.id == "question") question.setPosition(ground.x, ground.y);
-      window.draw(brick);
-      window.draw(block);
-      window.draw(question);
-    }
+      window.draw(goomba.sprite);
+    };
+    for (Mushroom& mushroom : game.currentLevel.mushrooms) {
+      mushroom.Move(dt.asSeconds());
+      window.draw(mushroom.sprite);
+    };
+    for (Coin& star : game.currentLevel.stars) {
+      star.Move(dt.asSeconds());
+      window.draw(star.sprite);
+    };
 
-    window.draw(marioSprite);
-    window.draw(goombaSprite);
+    window.draw(timeText);
+    window.draw(time);
+    window.draw(livesText);
+    window.draw(lives);
+    window.draw(pointsText);
+    window.draw(points);
+    window.draw(coinsText);
+    window.draw(coins);
+
+    window.draw(mario.sprite);
 
     window.display();
   }
